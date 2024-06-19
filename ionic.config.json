@@ -1,0 +1,8 @@
+{
+  "name": "easypillApp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular",
+  "id": "b902df38"
+}
