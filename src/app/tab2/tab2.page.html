@@ -1,17 +1,23 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>
-      Tab 2
+      Inventory
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+  <ion-list>
+    <ion-item *ngFor="let medicine of medicines">
+      <ion-label>
+        <h2>{{ medicine.name }}</h2>
+        <p>{{ medicine.dosage }}</p>
+        <p>Quantity: {{ medicine.quantity }}</p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button (click)="editMedicine(medicine)">Edit</ion-button>
+        <ion-button color="danger" (click)="deleteMedicine(medicine)">Delete</ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
 </ion-content>
