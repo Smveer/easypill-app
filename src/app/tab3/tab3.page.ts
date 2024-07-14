@@ -11,8 +11,16 @@ export class Tab3Page {
 
   constructor(public photoService: PhotoService) { }
 
-  addPhotoToGallery() {
-    this.photoService.addNewToGallery();
+  takePhoto() {
+    this.photoService.takePhoto();
+  }
+
+  selectPhoto() {
+    this.photoService.selectPhoto();
+  }
+
+  scanCode() {
+    this.photoService.scanCode();
   }
 
 }

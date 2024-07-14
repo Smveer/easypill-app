@@ -13,16 +13,9 @@ export class PhotoService {
 
   constructor(private http: HttpClient) { }
 
-  public async addNewToGallery() {
-    // Take a photo
-    const capturedPhoto = await Camera.getPhoto({
-      resultType: CameraResultType.Uri,
-      source: CameraSource.Camera,
-      quality: 100
-    });
-  
+  public async addToGallery(photo: Photo) {
     // Save the picture and add it to photo collection
-    const savedImageFile = await this.savePicture(capturedPhoto);
+    const savedImageFile = await this.checkPhoto(photo);
     this.photos.unshift(savedImageFile);
   }
 
@@ -43,7 +36,7 @@ export class PhotoService {
     return await this.convertBlobToBase64(blob) as string;
   }
 
-  private async savePicture(photo: Photo) {
+  private async checkPhoto(photo: Photo) {
     // Convert photo to base64 format, required by Filesystem API to save
     const base64Data = await this.readAsBase64(photo);
 
@@ -84,6 +77,75 @@ export class PhotoService {
       throw error;
     }
 
+  }
+
+  public async takePhoto() {
+    try {
+      const capturedPhoto = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera,
+        quality: 100
+      });
+      
+      if (!capturedPhoto || !capturedPhoto.webPath) {
+        throw new Error('No photo taken');
+      }
+
+      await this.addToGallery(capturedPhoto);
+    } catch (error) {
+      console.error('Error taking picture', error);
+    }
+  }
+
+  public async selectPhoto() {
+    try {
+      /*onst selectedPhotos = await Camera.pickImages({
+        quality: 100
+      });
+
+      if (!selectedPhotos || selectedPhotos.photos.length === 0) {
+        throw new Error('No photos selected');
+      }
+
+      const savedImages: UserPhoto[] = [];
+      for (const galleryPhoto of selectedPhotos.photos) {
+        const photo: Photo = {
+          format: galleryPhoto.format,
+          webPath: galleryPhoto.webPath,
+          path: galleryPhoto.path,
+          exif: null,
+          base64String: "",
+          saved: false
+        };
+        const savedImageFile = await this.addToGallery(photo);
+      }*/
+
+      const selectedPhoto = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Photos,
+        quality: 100
+      });
+
+      if (!selectedPhoto || !selectedPhoto.webPath) {
+        throw new Error('No photo selected');
+      }
+
+      await this.addToGallery(selectedPhoto);
+
+    } catch (error) {
+      console.error('Error selecting photo', error);
+    }
+  }
+
+  public async scanCode(): Promise<string | null> {
+    try {
+      // Implement code scanning logic here
+      const scannedCode = 'EXAMPLE_CODE';
+      return scannedCode;
+    } catch (error) {
+      console.error('Error scanning code', error);
+      return null;
+    }
   }
 }
 
