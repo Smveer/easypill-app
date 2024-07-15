@@ -9,6 +9,8 @@ import { PhotoService } from '../services/photo.service';
 
 export class Tab3Page {
 
+  isScanning = false;
+
   constructor(public photoService: PhotoService) { }
 
   takePhoto() {
@@ -21,6 +23,15 @@ export class Tab3Page {
 
   scanCode() {
     this.photoService.scanCode();
+    this.isScanning = true; // Show the camera preview
+
+    try {
+      this.photoService.scanCode();
+    } catch (error) {
+      console.error('Error scanning code', error);
+    } finally {
+      this.isScanning = false; // Hide the camera preview
+    }
   }
 
 }

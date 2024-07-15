@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource, GalleryPhoto, Photo } from '@capacitor/camera';
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { HttpClient } from '@angular/common/http';
@@ -139,12 +140,32 @@ export class PhotoService {
 
   public async scanCode(): Promise<string | null> {
     try {
-      // Implement code scanning logic here
-      const scannedCode = 'EXAMPLE_CODE';
-      return scannedCode;
+      // Check camera permission
+      const status = await BarcodeScanner.checkPermission({ force: true });
+
+      if (status.granted) {
+        //await BarcodeScanner.hideBackground(); // Make background transparent
+
+        // Start the scan
+        const result = await BarcodeScanner.startScan(); // Start scanning
+
+        if (result.hasContent) {
+          console.log('Scanned code', result.content);
+          return result.content;
+        } else {
+          console.log('No content found');
+          return null;
+        }
+      } else {
+        console.error('Camera permission denied');
+        return null;
+      }
     } catch (error) {
       console.error('Error scanning code', error);
       return null;
+    } finally {
+      BarcodeScanner.showBackground();
+      BarcodeScanner.stopScan();
     }
   }
 }
