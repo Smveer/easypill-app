@@ -1,13 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { filter } from 'rxjs/operators';
 
 interface Medicine {
-  name: string;
-  dosage: string;
-  quantity: number;
-  pillsPerTake: number;
-  timesPerDay: number;
-  comment: string;
+  code_cis: string;
+  date_amm: string;
+  denomination_du_medicament: string;
+  etat_de_commercialisation: string;
+  forme_pharmaceutique: string;
+  numero_autorisation_europeenne: string | null;
+  statut_administratif_autorisation_de_mise_sur_le_marche: string;
+  statutbdm: string | null;
+  surveillance_renforcee: string;
+  titulaire: string;
+  type_de_procedure_autorisation_de_mise_sur_le_marche: string;
+  voies_administration: string;
+  nb_pills: number;  // Add this line
 }
 
 @Component({
@@ -15,37 +24,85 @@ interface Medicine {
   templateUrl: 'tab2.page.html',
   styleUrls: ['tab2.page.scss']
 })
-export class Tab2Page {
-  medicines: Medicine[] = [
-    { name: 'Aspirin', dosage: '100mg', quantity: 20, pillsPerTake: 1, timesPerDay: 3, comment: 'For pain relief' },
-    { name: 'Metformin', dosage: '500mg', quantity: 50, pillsPerTake: 2, timesPerDay: 2, comment: 'For diabetes' }
-  ];
+export class Tab2Page implements OnInit {
+  medicines: Medicine[] = [];
+  medInfo: Medicine | null = null;
 
-  constructor(private alertController: AlertController) {}
+  constructor(
+    private alertController: AlertController,
+    private router: Router,
+    private cdRef: ChangeDetectorRef
+  ) {}
+
+  ngOnInit() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.initializeMedInfo();
+    });
+  }
+
+  initializeMedInfo() {
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras?.state as { medInfo?: Medicine | Medicine[] };
+
+    console.log('Navigation state:', state);
+
+    if (state && state.medInfo) {
+      if (Array.isArray(state.medInfo)) {
+        console.log('Received array of medicines:', state.medInfo);
+        if (state.medInfo.length > 0) {
+          // Add the first item if it's an array
+          this.medicines.push({ ...state.medInfo[0], nb_pills: state.medInfo[0].nb_pills || 0 });
+        }
+      } else {
+        console.log('Received single medicine object:', state.medInfo);
+        this.medicines.push({ ...state.medInfo, nb_pills: state.medInfo.nb_pills || 0 });
+      }
+
+      this.cdRef.detectChanges(); // Force change detection
+    } else {
+      console.log('No medInfo found in state.');
+    }
+  }
 
   async addMedicine() {
     const alert = await this.alertController.create({
       header: 'Add Medicine',
       inputs: [
-        { name: 'name', type: 'text', placeholder: 'Medicine Name' },
-        { name: 'dosage', type: 'text', placeholder: 'Dosage' },
-        { name: 'quantity', type: 'number', placeholder: 'Quantity' },
-        { name: 'pillsPerTake', type: 'number', placeholder: 'Pills per Take' },
-        { name: 'timesPerDay', type: 'number', placeholder: 'Times per Day' },
-        { name: 'comment', type: 'text', placeholder: 'Comment' }
+        { name: 'denomination_du_medicament', type: 'text', placeholder: 'Medicine Name' },
+        { name: 'forme_pharmaceutique', type: 'text', placeholder: 'Pharmaceutical Form' },
+        { name: 'code_cis', type: 'text', placeholder: 'Code CIS' },
+        { name: 'date_amm', type: 'text', placeholder: 'Date AMM' },
+        { name: 'etat_de_commercialisation', type: 'text', placeholder: 'Commercialisation Status' },
+        { name: 'numero_autorisation_europeenne', type: 'text', placeholder: 'Authorization Number' },
+        { name: 'statut_administratif_autorisation_de_mise_sur_le_marche', type: 'text', placeholder: 'Administrative Status' },
+        { name: 'surveillance_renforcee', type: 'text', placeholder: 'Surveillance' },
+        { name: 'titulaire', type: 'text', placeholder: 'Holder' },
+        { name: 'type_de_procedure_autorisation_de_mise_sur_le_marche', type: 'text', placeholder: 'Authorization Procedure' },
+        { name: 'voies_administration', type: 'text', placeholder: 'Administration Routes' },
+        { name: 'nb_pills', type: 'number', placeholder: 'Number of Pills', value: 0 } // Add this line
       ],
       buttons: [
         { text: 'Cancel', role: 'cancel' },
         { text: 'Add', handler: (data) => {
-          if (data.name && data.dosage && data.quantity && data.pillsPerTake && data.timesPerDay) {
+          if (data.denomination_du_medicament && data.forme_pharmaceutique && data.code_cis) {
             this.medicines.push({
-              name: data.name,
-              dosage: data.dosage,
-              quantity: data.quantity,
-              pillsPerTake: data.pillsPerTake,
-              timesPerDay: data.timesPerDay,
-              comment: data.comment
+              code_cis: data.code_cis,
+              date_amm: data.date_amm,
+              denomination_du_medicament: data.denomination_du_medicament,
+              etat_de_commercialisation: data.etat_de_commercialisation,
+              forme_pharmaceutique: data.forme_pharmaceutique,
+              numero_autorisation_europeenne: data.numero_autorisation_europeenne,
+              statut_administratif_autorisation_de_mise_sur_le_marche: data.statut_administratif_autorisation_de_mise_sur_le_marche,
+              statutbdm: null,
+              surveillance_renforcee: data.surveillance_renforcee,
+              titulaire: data.titulaire,
+              type_de_procedure_autorisation_de_mise_sur_le_marche: data.type_de_procedure_autorisation_de_mise_sur_le_marche,
+              voies_administration: data.voies_administration,
+              nb_pills: data.nb_pills || 0 // Set default value if not provided
             });
+            this.cdRef.detectChanges(); // Force change detection after adding
           }
         }}
       ]
@@ -58,23 +115,39 @@ export class Tab2Page {
     const alert = await this.alertController.create({
       header: 'Edit Medicine',
       inputs: [
-        { name: 'name', type: 'text', value: medicine.name, placeholder: 'Medicine Name' },
-        { name: 'dosage', type: 'text', value: medicine.dosage, placeholder: 'Dosage' },
-        { name: 'quantity', type: 'number', value: medicine.quantity, placeholder: 'Quantity' },
-        { name: 'pillsPerTake', type: 'number', value: medicine.pillsPerTake, placeholder: 'Pills per Take' },
-        { name: 'timesPerDay', type: 'number', value: medicine.timesPerDay, placeholder: 'Times per Day' },
-        { name: 'comment', type: 'text', value: medicine.comment, placeholder: 'Comment' }
+        { name: 'denomination_du_medicament', type: 'text', value: medicine.denomination_du_medicament, placeholder: 'Medicine Name' },
+        { name: 'forme_pharmaceutique', type: 'text', value: medicine.forme_pharmaceutique, placeholder: 'Pharmaceutical Form' },
+        { name: 'code_cis', type: 'text', value: medicine.code_cis, placeholder: 'Code CIS' },
+        { name: 'date_amm', type: 'text', value: medicine.date_amm, placeholder: 'Date AMM' },
+        { name: 'etat_de_commercialisation', type: 'text', value: medicine.etat_de_commercialisation, placeholder: 'Commercialisation Status' },
+        { name: 'numero_autorisation_europeenne', type: 'text', value: medicine.numero_autorisation_europeenne, placeholder: 'Authorization Number' },
+        { name: 'statut_administratif_autorisation_de_mise_sur_le_marche', type: 'text', value: medicine.statut_administratif_autorisation_de_mise_sur_le_marche, placeholder: 'Administrative Status' },
+        { name: 'surveillance_renforcee', type: 'text', value: medicine.surveillance_renforcee, placeholder: 'Surveillance' },
+        { name: 'titulaire', type: 'text', value: medicine.titulaire, placeholder: 'Holder' },
+        { name: 'type_de_procedure_autorisation_de_mise_sur_le_marche', type: 'text', value: medicine.type_de_procedure_autorisation_de_mise_sur_le_marche, placeholder: 'Authorization Procedure' },
+        { name: 'voies_administration', type: 'text', value: medicine.voies_administration, placeholder: 'Administration Routes' },
+        { name: 'nb_pills', type: 'number', value: medicine.nb_pills, placeholder: 'Number of Pills' } // Add this line
       ],
       buttons: [
         { text: 'Cancel', role: 'cancel' },
         { text: 'Save', handler: (data) => {
-          if (data.name && data.dosage && data.quantity && data.pillsPerTake && data.timesPerDay) {
-            medicine.name = data.name;
-            medicine.dosage = data.dosage;
-            medicine.quantity = data.quantity;
-            medicine.pillsPerTake = data.pillsPerTake;
-            medicine.timesPerDay = data.timesPerDay;
-            medicine.comment = data.comment;
+          if (data.denomination_du_medicament && data.forme_pharmaceutique && data.code_cis) {
+            Object.assign(medicine, {
+              code_cis: data.code_cis,
+              date_amm: data.date_amm,
+              denomination_du_medicament: data.denomination_du_medicament,
+              etat_de_commercialisation: data.etat_de_commercialisation,
+              forme_pharmaceutique: data.forme_pharmaceutique,
+              numero_autorisation_europeenne: data.numero_autorisation_europeenne,
+              statut_administratif_autorisation_de_mise_sur_le_marche: data.statut_administratif_autorisation_de_mise_sur_le_marche,
+              statutbdm: null,
+              surveillance_renforcee: data.surveillance_renforcee,
+              titulaire: data.titulaire,
+              type_de_procedure_autorisation_de_mise_sur_le_marche: data.type_de_procedure_autorisation_de_mise_sur_le_marche,
+              voies_administration: data.voies_administration,
+              nb_pills: data.nb_pills || 0 // Set default value if not provided
+            });
+            this.cdRef.detectChanges(); // Force change detection after editing
           }
         }}
       ]
@@ -85,5 +158,6 @@ export class Tab2Page {
 
   deleteMedicine(medicine: Medicine) {
     this.medicines = this.medicines.filter(m => m !== medicine);
+    this.cdRef.detectChanges(); // Force change detection after deleting
   }
 }

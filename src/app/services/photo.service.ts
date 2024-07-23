@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { Camera, CameraResultType, CameraSource, GalleryPhoto, Photo } from '@capacitor/camera';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -12,131 +13,71 @@ import { HttpClient } from '@angular/common/http';
 export class PhotoService {
   public photos: UserPhoto[] = [];
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private injector: Injector, private router: Router) {}
 
-  public async addToGallery(photo: Photo) {
-    // Save the picture and add it to photo collection
-    const savedImageFile = await this.checkPhoto(photo);
-    this.photos.unshift(savedImageFile);
+  private getHttpClient(): HttpClient {
+    if (!this.http) {
+      this.http = this.injector.get(HttpClient);
+    }
+    return this.http;
   }
 
-  private convertBlobToBase64 = (blob: Blob) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-        resolve(reader.result);
-    };
-    reader.readAsDataURL(blob);
-  });
+  public async addNewToGallery() {
+    // Take a photo
+    const capturedPhoto = await Camera.getPhoto({
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      quality: 100
+    });
 
-  private async readAsBase64(photo: Photo) {
-    // Fetch the photo, read as a blob, then convert to base64 format
-    const response = await fetch(photo.webPath!);
-    const blob = await response.blob();
-  
-    return await this.convertBlobToBase64(blob) as string;
+    const savedImageFileEncoded = await this.savePicture(capturedPhoto);
+    await this.sendImage(savedImageFileEncoded); 
   }
 
-  private async checkPhoto(photo: Photo) {
+  private async savePicture(photo: Photo) {
     // Convert photo to base64 format, required by Filesystem API to save
-    const base64Data = await this.readAsBase64(photo);
+    let base64Data = await this.readAsBase64(photo)
+    base64Data = base64Data.replace("data:image/png;base64,", "");
+    return base64Data;
+ }
 
-    // Write the file to the data directory
-    const fileName = Date.now() + '.jpeg';
-
-    try {
-      /*const savedFile = await Filesystem.writeFile({
-        path: fileName,
-        data: base64Data,
-        directory: Directory.Data
-      });
+ private async sendImage(base64Data: string) {
+  if (base64Data.startsWith("data:image/jpeg;base64,")) {
+    base64Data = base64Data.replace("data:image/jpeg;base64,", "");
+  }
   
-      console.log('Image saved : ', savedFile);*/
-      
-      // Prepare the form data
-      const formData = new FormData();
-      formData.append('file', base64Data);
-      formData.append('filename', `${Date.now()}.jpeg`);
-      
+  const apiUrl = 'https://easypill-jeb2ncxl6a-ew.a.run.app/detect_text'; // Replace with your FastAPI endpoint
+  const postData = {
+    image: base64Data
+  };
 
-      // Replace 'your-api-endpoint' with your actual API endpoint
-      const apiUrl = '';
+  try {
+    const http = this.getHttpClient(); // Use the manual injector to get HttpClient
+    const response: any = await http.post(apiUrl, postData).toPromise();
+    this.router.navigate(['/drug-selection'], { state: { detectedData: response } });
 
-      try {
-        const response = await this.http.post(apiUrl, formData).toPromise();
-        console.log('Upload successful', response);
-      } catch (error) {
-        console.error('Upload failed', error);
-      }
-  
-      return {
-        filepath: fileName,
-        webviewPath: photo.webPath
-      };
-    } catch (error) {
-      console.error('Error image not saved : ', error);
-      throw error;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+  }
+}
+
+private convertBlobToBase64 = (blob: Blob): Promise<string> => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onerror = reject;
+  reader.onload = () => {
+    resolve(reader.result as string);
+  };
+  reader.readAsDataURL(blob);
+});
+
+ private async readAsBase64(photo: Photo): Promise<string> {
+
+        const response = await fetch(photo.webPath!);
+        const blob = await response.blob();
+
+        return await this.convertBlobToBase64(blob);
     }
 
-  }
-
-  public async takePhoto() {
-    try {
-      const capturedPhoto = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Camera,
-        quality: 100
-      });
-      
-      if (!capturedPhoto || !capturedPhoto.webPath) {
-        throw new Error('No photo taken');
-      }
-
-      await this.addToGallery(capturedPhoto);
-    } catch (error) {
-      console.error('Error taking picture', error);
-    }
-  }
-
-  public async selectPhoto() {
-    try {
-      /*onst selectedPhotos = await Camera.pickImages({
-        quality: 100
-      });
-
-      if (!selectedPhotos || selectedPhotos.photos.length === 0) {
-        throw new Error('No photos selected');
-      }
-
-      const savedImages: UserPhoto[] = [];
-      for (const galleryPhoto of selectedPhotos.photos) {
-        const photo: Photo = {
-          format: galleryPhoto.format,
-          webPath: galleryPhoto.webPath,
-          path: galleryPhoto.path,
-          exif: null,
-          base64String: "",
-          saved: false
-        };
-        const savedImageFile = await this.addToGallery(photo);
-      }*/
-
-      const selectedPhoto = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Photos,
-        quality: 100
-      });
-
-      if (!selectedPhoto || !selectedPhoto.webPath) {
-        throw new Error('No photo selected');
-      }
-
-      await this.addToGallery(selectedPhoto);
-
-    } catch (error) {
-      console.error('Error selecting photo', error);
-    }
-  }
 
   public async scanCode(): Promise<string | null> {
     try {

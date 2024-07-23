@@ -13,16 +13,12 @@ export class Tab3Page {
 
   constructor(public photoService: PhotoService) { }
 
-  takePhoto() {
-    this.photoService.takePhoto();
-  }
-
-  selectPhoto() {
-    this.photoService.selectPhoto();
+  addPhotoToGallery() {
+    this.photoService.addNewToGallery();
+    this.isScanning = true
   }
 
   scanCode() {
-    this.photoService.scanCode();
     this.isScanning = true; // Show the camera preview
 
     try {
