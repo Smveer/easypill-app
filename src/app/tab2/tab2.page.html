@@ -18,15 +18,15 @@
         <h2>{{ medicine.denomination_du_medicament }}</h2>
         <p>Code CIS: {{ medicine.code_cis }}</p>
         <p>Date AMM: {{ medicine.date_amm }}</p>
-        <p>Commercialisation Status: {{ medicine.etat_de_commercialisation }}</p>
-        <p>Pharmaceutical Form: {{ medicine.forme_pharmaceutique }}</p>
-        <p>Authorization Number: {{ medicine.numero_autorisation_europeenne }}</p>
-        <p>Administrative Status: {{ medicine.statut_administratif_autorisation_de_mise_sur_le_marche }}</p>
+        <p>Etat de commercialisation: {{ medicine.etat_de_commercialisation }}</p>
+        <p>Forme pharmaceutique: {{ medicine.forme_pharmaceutique }}</p>
+        <p>Numéro autorisation: {{ medicine.numero_autorisation_europeenne }}</p>
+        <p>Status administration: {{ medicine.statut_administratif_autorisation_de_mise_sur_le_marche }}</p>
         <p>Surveillance: {{ medicine.surveillance_renforcee }}</p>
-        <p>Holder: {{ medicine.titulaire }}</p>
-        <p>Authorization Procedure: {{ medicine.type_de_procedure_autorisation_de_mise_sur_le_marche }}</p>
-        <p>Administration Routes: {{ medicine.voies_administration }}</p>
-        <p>Nb pills: {{ medicine.nb_pills }}</p>
+        <p>Titulaire: {{ medicine.titulaire }}</p>
+        <p>Autorisation procedure: {{ medicine.type_de_procedure_autorisation_de_mise_sur_le_marche }}</p>
+        <p>Voies d'administration: {{ medicine.voies_administration }}</p>
+        <p>Nombre: {{ medicine.nb_pills }}</p>
       </ion-label>
       <ion-buttons slot="end">
         <ion-button (click)="editMedicine(medicine)">Edit</ion-button>
